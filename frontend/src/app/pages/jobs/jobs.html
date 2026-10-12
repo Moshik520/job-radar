@@ -1,8 +1,21 @@
+<input
+  class="search-input"
+  data-testid="search-input"
+  placeholder="Search jobs..."
+  (input)="searchTerm.set($any($event.target).value)"
+/>
+
+<p class="results-count" data-testid="results-count">
+  Showing {{ filteredJobs().length }} of {{ jobs().length }} jobs
+</p>
+
 <section class="job-list">
-  @for (job of jobs(); track job.id) {
+  @for (job of filteredJobs(); track job.id) {
     <article class="job-card" data-testid="job-card">
       <h3>{{ job.title }}</h3>
       <p>{{ job.company }} · {{ job.location }}</p>
     </article>
+  } @empty {
+    <p class="no-results" data-testid="no-results">No jobs match your search.</p>
   }
 </section>

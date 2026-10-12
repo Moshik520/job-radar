@@ -25,3 +25,31 @@
     color: var(--color-text-muted);
   }
 }
+
+.search-input {
+  width: 100%;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font: inherit;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  }
+}
+
+.results-count {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.no-results {
+  padding: 32px;
+  text-align: center;
+  color: var(--color-text-muted);
+}
