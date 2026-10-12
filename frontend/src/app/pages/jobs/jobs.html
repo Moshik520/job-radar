@@ -1,6 +1,8 @@
-@for (job of jobs(); track job.id) {
-  <article data-testid="job-card">
-    <h3>{{ job.title }}</h3>
-    <p>{{ job.company }} · {{ job.location }}</p>
-  </article>
-}
+<section class="job-list">
+  @for (job of jobs(); track job.id) {
+    <article class="job-card" data-testid="job-card">
+      <h3>{{ job.title }}</h3>
+      <p>{{ job.company }} · {{ job.location }}</p>
+    </article>
+  }
+</section>
