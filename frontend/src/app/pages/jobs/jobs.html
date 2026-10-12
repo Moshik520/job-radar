@@ -1,0 +1,6 @@
+@for (job of jobs(); track job.id) {
+  <article data-testid="job-card">
+    <h3>{{ job.title }}</h3>
+    <p>{{ job.company }} · {{ job.location }}</p>
+  </article>
+}
