@@ -11,10 +11,7 @@
 
 <section class="job-list">
   @for (job of filteredJobs(); track job.id) {
-    <article class="job-card" data-testid="job-card">
-      <h3>{{ job.title }}</h3>
-      <p>{{ job.company }} · {{ job.location }}</p>
-    </article>
+    <app-job-card [job]="job" />
   } @empty {
     <p class="no-results" data-testid="no-results">No jobs match your search.</p>
   }

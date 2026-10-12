@@ -1,8 +1,9 @@
 import { Component, computed, signal } from '@angular/core';
 import { MOCK_JOBS } from '../../models/mock-jobs';
+import { JobCard } from '../../components/job-card/job-card';
 
 @Component({
-  imports: [],
+  imports: [JobCard],
   selector: 'app-jobs',
   styleUrl: './jobs.scss',
   templateUrl: './jobs.html',

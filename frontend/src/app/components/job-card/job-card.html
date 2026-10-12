@@ -1,0 +1,6 @@
+<article class="job-card" data-testid="job-card">
+  <h3>
+    <a [routerLink]="['/jobs', job().id]" data-testid="job-card-link">{{ job().title }}</a>
+  </h3>
+  <p>{{ job().company }} · {{ job().location }}</p>
+</article>
