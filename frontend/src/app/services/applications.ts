@@ -1,6 +1,6 @@
 import { effect, Service, signal } from '@angular/core';
 import { Application } from '../models/application';
-
+import { JobStatus } from '../models/job';
 // Temporary browser storage until the backend exists.
 const STORAGE_KEY = 'job-radar.applications';
 
@@ -26,6 +26,14 @@ export class ApplicationsService {
 
   remove(jobId: string) {
     this.applications.update((list) => list.filter((application) => application.jobId !== jobId));
+  }
+
+  updateStatus(jobId: string, status: JobStatus) {
+    this.applications.update((list) =>
+      list.map((application) =>
+        application.jobId === jobId ? { ...application, status } : application,
+      ),
+    );
   }
 
   private load(): Application[] {

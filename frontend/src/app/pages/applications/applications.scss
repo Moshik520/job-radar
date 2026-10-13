@@ -13,17 +13,25 @@ h1 {
   position: relative;
 }
 
-.status {
+.status-select {
   position: absolute;
-  top: 16px;
+  top: 14px;
   right: 20px;
-  padding: 2px 10px;
+  padding: 4px 10px;
+  border: 1px solid transparent;
   border-radius: 999px;
   background: rgba(79, 70, 229, 0.1);
   color: var(--color-primary);
+  font: inherit;
   font-size: 13px;
   font-weight: 600;
   text-transform: capitalize;
+  cursor: pointer;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
 }
 
 .empty {
