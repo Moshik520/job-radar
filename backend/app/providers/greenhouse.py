@@ -1,3 +1,4 @@
+from app.locations import is_israel
 from app.models import Job
 
 
@@ -11,5 +12,5 @@ def to_job(raw: dict, board: str) -> Job:
         source="greenhouse",
         published_at=raw["first_published"],
         updated_at=raw["updated_at"],
-        is_israel=False,  # TODO: detect from location
+        is_israel=is_israel(raw["location"]["name"]),
     )
