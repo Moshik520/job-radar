@@ -14,9 +14,29 @@
       <dd>{{ job.publishedAt }}</dd>
     </dl>
 
-    <a class="apply-button" data-testid="apply-button" [href]="job.url" target="_blank" rel="noopener">
-      Apply on company site
-    </a>
+    <div class="actions">
+      <a
+        class="apply-button"
+        data-testid="apply-button"
+        [href]="job.url"
+        target="_blank"
+        rel="noopener"
+      >
+        Apply on company site
+      </a>
+      <button
+        class="save-button"
+        data-testid="save-button"
+        [class.saved]="isSaved()"
+        (click)="toggleSave()"
+      >
+        @if (isSaved()) {
+          Saved ✓
+        } @else {
+          Save
+        }
+      </button>
+    </div>
   </article>
 } @else {
   <p class="not-found" data-testid="job-not-found">Job not found.</p>

@@ -1,5 +1,10 @@
 <header class="app-header">
   <a class="logo" routerLink="/">{{ title() }}</a>
+
+  <nav class="nav">
+    <a routerLink="/jobs" routerLinkActive="active" data-testid="nav-jobs">Jobs</a>
+    <a routerLink="/applications" routerLinkActive="active" data-testid="nav-applications">My Applications</a>
+  </nav>
 </header>
 
 <main class="app-main">

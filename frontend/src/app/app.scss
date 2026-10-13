@@ -1,4 +1,7 @@
 .app-header {
+  display: flex;
+  align-items: center;
+  gap: 32px;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   padding: 16px 24px;
@@ -9,6 +12,22 @@
   font-weight: 700;
   color: var(--color-primary);
   text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  gap: 20px;
+
+  a {
+    color: var(--color-text-muted);
+    font-weight: 500;
+    text-decoration: none;
+
+    &:hover,
+    &.active {
+      color: var(--color-primary);
+    }
+  }
 }
 
 .app-main {

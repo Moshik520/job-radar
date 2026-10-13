@@ -1,0 +1,14 @@
+<h1>My Applications</h1>
+
+<section class="saved-jobs">
+  @for (item of savedJobs(); track item.application.jobId) {
+    @if (item.job; as job) {
+      <div class="saved-job" data-testid="saved-job">
+        <app-job-card [job]="job" />
+        <span class="status" data-testid="job-status">{{ item.application.status }}</span>
+      </div>
+    }
+  } @empty {
+    <p class="empty" data-testid="no-applications">You haven't saved any jobs yet.</p>
+  }
+</section>
