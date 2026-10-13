@@ -1,6 +1,7 @@
 export type JobSource = 'greenhouse' | 'lever' | 'ashby' | 'workday' | 'comeet';
 export type JobStatus = 'saved' | 'applied' | 'interview' | 'offer' | 'rejected';
 
+export const JOB_SOURCES: JobSource[] = ['greenhouse', 'lever', 'ashby', 'workday', 'comeet'];
 export const JOB_STATUSES: JobStatus[] = ['saved', 'applied', 'interview', 'offer', 'rejected'];
 
 export interface Job {
