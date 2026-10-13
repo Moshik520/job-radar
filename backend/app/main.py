@@ -1,6 +1,7 @@
 
 import httpx
 from fastapi import FastAPI, HTTPException
+from app.providers.greenhouse import to_job
 
 app = FastAPI(title="Job Radar API")
 
@@ -17,5 +18,6 @@ async def greenhouse_jobs(board: str):
         response = await client.get(url)
     if response.status_code == 404:
         raise HTTPException(status_code=404, detail="Company not found")
-    return response.json()
+    jobs = response.json()["jobs"]
+    return [to_job(raw, board) for raw in jobs]
 
