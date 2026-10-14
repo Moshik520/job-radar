@@ -19,3 +19,12 @@ class Job(BaseModel):
     published_at: str
     updated_at: str
     is_israel: bool
+
+
+class JobsPage(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    items: list[Job]
+    total: int
+    page: int
+    page_size: int

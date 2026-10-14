@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 import httpx
 from pymongo import UpdateOne
 
-from app.db import companies_collection, jobs_collection
+from app.db import companies_collection, ensure_indexes, jobs_collection
 from app.providers import greenhouse
 
 MAX_CONCURRENT_REQUESTS = 20
@@ -47,6 +47,7 @@ async def scan_company(client: httpx.AsyncClient, semaphore: asyncio.Semaphore, 
 
 
 async def scan_all() -> None:
+    await ensure_indexes()
     companies = await companies_collection.find({"ats": "greenhouse"}).to_list()
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
     started = datetime.now(UTC)

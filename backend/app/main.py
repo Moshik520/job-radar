@@ -1,12 +1,22 @@
 
+import re
+from contextlib import asynccontextmanager
+
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from app.db import jobs_collection
-from app.models import Job
+from app.db import ensure_indexes, jobs_collection
+from app.models import Job, JobSource, JobsPage
 from app.providers import greenhouse
 
-app = FastAPI(title="Job Radar API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await ensure_indexes()
+    yield
+
+
+app = FastAPI(title="Job Radar API", lifespan=lifespan)
 
 # Allow the Angular dev server (a different origin) to call this API from the browser.
 app.add_middleware(
@@ -46,7 +56,40 @@ async def scan_greenhouse(board: str):
 
 
 @app.get("/jobs")
-async def list_jobs():
-    cursor = jobs_collection.find()
+async def list_jobs(
+    search: str = "",
+    israel_only: bool = False,
+    source: JobSource | None = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+) -> JobsPage:
+    query = {}
+    if search:
+        query["title"] = {"$regex": re.escape(search), "$options": "i"}
+    if israel_only:
+        query["is_israel"] = True
+    if source:
+        query["source"] = source
+
+    total = await jobs_collection.count_documents(query)
+    cursor = (
+        jobs_collection.find(query)
+        .sort("published_at", -1)
+        .skip((page - 1) * page_size)
+        .limit(page_size)
+    )
     documents = await cursor.to_list()
-    return [Job(**doc) for doc in documents]
+    return JobsPage(
+        items=[Job(**doc) for doc in documents],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@app.get("/jobs/{job_id}")
+async def get_job(job_id: str) -> Job:
+    document = await jobs_collection.find_one({"_id": job_id})
+    if document is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return Job(**document)
