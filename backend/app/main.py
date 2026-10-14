@@ -2,9 +2,9 @@
 import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from app.providers.greenhouse import to_job
 from app.db import jobs_collection
 from app.models import Job
+from app.providers import greenhouse
 
 app = FastAPI(title="Job Radar API")
 
@@ -23,36 +23,30 @@ def health():
 
 
 @app.get("/greenhouse/{board}")
-async def greenhouse_jobs(board: str):
-    url = f"https://boards-api.greenhouse.io/v1/boards/{board}/jobs"
+async def greenhouse_jobs(board: str) -> list[Job]:
     async with httpx.AsyncClient() as client:
-        response = await client.get(url)
-    if response.status_code == 404:
-        raise HTTPException(status_code=404, detail="Company not found")
-    jobs = response.json()["jobs"]
-    return [to_job(raw, board) for raw in jobs]
+        try:
+            return await greenhouse.fetch_jobs(client, board)
+        except httpx.HTTPStatusError as error:
+            if error.response.status_code == 404:
+                raise HTTPException(status_code=404, detail="Company not found") from error
+            raise
 
 
 @app.post("/scan/greenhouse/{board}")
 async def scan_greenhouse(board: str):
     jobs = await greenhouse_jobs(board)
-
     for job in jobs:
         await jobs_collection.update_one(
-        {"_id": job.id},
-        {"$set": job.model_dump()},                                 
-        upsert=True,                                    
+            {"_id": job.id},
+            {"$set": job.model_dump()},
+            upsert=True,
         )
     return {"saved": len(jobs)}
 
 
 @app.get("/jobs")
 async def list_jobs():
-    cursor = jobs_collection.find()     
-    documents = await cursor.to_list()       
+    cursor = jobs_collection.find()
+    documents = await cursor.to_list()
     return [Job(**doc) for doc in documents]
-
-
-
-
-    

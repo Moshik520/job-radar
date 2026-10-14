@@ -1,16 +1,30 @@
+import httpx
+
 from app.locations import is_israel
 from app.models import Job
 
+API_URL = "https://boards-api.greenhouse.io/v1/boards/{board}/jobs"
+
 
 def to_job(raw: dict, board: str) -> Job:
+    # Real boards sometimes omit these: no location, or no first_published date.
+    location = (raw.get("location") or {}).get("name") or ""
+    published_at = raw.get("first_published") or raw["updated_at"]
     return Job(
         id=f"greenhouse:{board}:{raw['id']}",
         title=raw["title"].strip(),
         company=raw["company_name"],
-        location=raw["location"]["name"],
+        location=location,
         url=raw["absolute_url"],
         source="greenhouse",
-        published_at=raw["first_published"],
+        published_at=published_at,
         updated_at=raw["updated_at"],
-        is_israel=is_israel(raw["location"]["name"]),
+        is_israel=is_israel(location),
     )
+
+
+async def fetch_jobs(client: httpx.AsyncClient, board: str) -> list[Job]:
+    """Fetch a company's open jobs. Raises httpx.HTTPStatusError on 404 and other HTTP errors."""
+    response = await client.get(API_URL.format(board=board))
+    response.raise_for_status()
+    return [to_job(raw, board) for raw in response.json()["jobs"]]

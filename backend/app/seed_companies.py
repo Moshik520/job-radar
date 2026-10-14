@@ -7,10 +7,9 @@ import asyncio
 import csv
 from pathlib import Path
 
-from app.db import db
+from app.db import companies_collection
 
 COMPANIES_CSV = Path(__file__).resolve().parent.parent / "data" / "companies.csv"
-companies_collection = db["companies"]
 
 
 async def main():
