@@ -11,7 +11,7 @@
         (change)="changeStatus(application.jobId, $any($event.target).value)"
       >
         @for (status of statuses; track status) {
-          <option [value]="status">{{ status }}</option>
+          <option [value]="status" [selected]="status === application.status">{{ status }}</option>
         }
       </select>
     </div>

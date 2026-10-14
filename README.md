@@ -1,5 +1,7 @@
 # Job Radar
 
+[![CI](https://github.com/Moshik520/job-radar/actions/workflows/ci.yml/badge.svg)](https://github.com/Moshik520/job-radar/actions/workflows/ci.yml)
+
 Job Radar finds open jobs in Israel straight from companies' own hiring systems, before or instead of LinkedIn.
 It scans the public job boards of ~12,300 companies across 9 applicant-tracking systems (ATS), keeps only the
 jobs located in Israel, sorts each one into a job type, and serves them through a searchable Angular app.
@@ -100,22 +102,35 @@ After changing the classification rules, recompute every stored job with `python
 
 ## Tests
 
+Every push runs both suites on GitHub Actions (backend against a real MongoDB service container).
+
 ```bash
+# Backend: unit + API tests (API tests need MongoDB: docker compose up -d)
 cd backend
 pytest
+
+# Frontend: component and service tests (Vitest + jsdom)
+cd frontend
+npx ng test --watch=false
 ```
 
-The backend suite is data-driven (`pytest.mark.parametrize`) and built from real titles and locations found while
-scanning — including regression cases for bugs found on real data, such as the Boston hospital chain that matched
-"Israel" and New York time zones that broke the newest-first order.
+**Backend — pytest (136 tests).** Data-driven (`pytest.mark.parametrize`) and built from real titles and locations
+found while scanning, including regression cases for bugs found on real data: the Boston hospital chain that matched
+"Israel", and New York time zones that broke the newest-first order.
 
 | Suite | Covers |
 |---|---|
+| `test_api.py` | Every endpoint over HTTP with FastAPI `TestClient` against a test database: sorting, paging, search (incl. `C++` and other regex characters), single and multiple category filters, category counts, ids containing `/`, cached details, 404 / 422 responses, and a scan that stores only Israeli jobs and deletes closed ones (ATS mocked) |
 | `test_locations.py` | Israeli city spellings, curly apostrophes, Hebrew, look-alike places that must not match |
 | `test_classify.py` | Job titles in English and Hebrew → category |
 | `test_providers.py` | Each adapter's transformations: Lever timestamps, Workday "Posted 3 Days Ago", Comeet country codes, Personio XML |
 | `test_dates.py` | Every provider's date format → UTC, and correct sort order across time zones |
 | `test_greenhouse.py`, `test_details.py` | Adapter mapping, missing fields, job id parsing |
+
+**Frontend — Vitest (60 tests).** Components are rendered with the real template and an `HttpTestingController`
+standing in for the API: loading, empty, error and retry states; paging; opening and closing job cards and
+"Collapse all"; the multi-select category dropdown; saving jobs and changing their status; and that scripts in a
+job description are stripped before it is shown.
 
 ## Project structure
 
@@ -142,8 +157,8 @@ job-radar/
 ## Roadmap
 
 - [ ] UI end-to-end tests: Selenium (Page Object Model) and Playwright (network mocking)
-- [ ] API tests with FastAPI `TestClient`
-- [ ] GitHub Actions CI running every suite on each push
+- [x] API tests with FastAPI `TestClient`
+- [x] GitHub Actions CI running every suite on each push
 - [ ] Backend and frontend in Docker Compose; scheduled scans
 - [ ] Public deployment
 - [ ] AI agent that ranks jobs against an uploaded CV

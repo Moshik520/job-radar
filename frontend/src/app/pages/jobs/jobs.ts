@@ -37,7 +37,7 @@ export class Jobs {
   protected readonly firstShown = computed(() =>
     this.total() === 0 ? 0 : (this.page() - 1) * PAGE_SIZE + 1,
   );
-  protected readonly lastShown = computed(() => Math.min(this.page() * PAGE_SIZE, this.total()));
+  protected readonly lastShown = computed(() => this.firstShown() + Math.max(this.jobs().length - 1, 0));
 
   onSearchInput(value: string) {
     clearTimeout(this.searchTimer);

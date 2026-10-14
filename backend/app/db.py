@@ -3,9 +3,10 @@ import os
 from pymongo import AsyncMongoClient
 
 MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
+MONGO_DB = os.getenv("MONGO_DB", "job_radar")  # the API tests use their own database
 
 client = AsyncMongoClient(MONGO_URL)
-db = client["job_radar"]
+db = client[MONGO_DB]
 jobs_collection = db["jobs"]
 companies_collection = db["companies"]
 details_collection = db["job_details"]  # full descriptions, keyed by job id
