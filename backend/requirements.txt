@@ -1,1 +1,2 @@
 fastapi[standard]>=0.143
+pymongo>=4.13
