@@ -1,6 +1,6 @@
-# Job Radar — frontend
+# Job Radar frontend
 
-Angular app for Job Radar. See the [main README](../README.md) for the full project.
+Angular app for Job Radar. See the [main README](../README.md) for the rest of the project.
 
 ```bash
 npm install
