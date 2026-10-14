@@ -1,4 +1,5 @@
 
+import os
 import re
 from contextlib import asynccontextmanager
 
@@ -20,10 +21,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Job Radar API", lifespan=lifespan)
 
-# Allow the Angular dev server (a different origin) to call this API from the browser.
+# Allow the Angular app (a different origin) to call this API from the browser.
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:4200").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200"],
+    allow_origins=CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )

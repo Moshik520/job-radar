@@ -43,3 +43,55 @@ jobs:
       - run: npm ci
       - run: npx ng build
       - run: npx ng test --watch=false
+
+  e2e:
+    name: Browser tests (Selenium + Playwright)
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:8
+        ports:
+          - 27017:27017
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements*.txt
+            e2e/requirements.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: |
+          pip install -r backend/requirements.txt -r e2e/requirements.txt
+          python -m playwright install --with-deps chromium
+          npm ci --prefix frontend
+
+      - name: Start the API (port 8001, test database)
+        working-directory: backend
+        env:
+          MONGO_DB: job_radar_e2e
+          CORS_ORIGINS: http://localhost:4201
+        run: uvicorn app.main:app --port 8001 &
+
+      - name: Start the app (port 4201)
+        working-directory: frontend
+        run: npx ng serve --configuration e2e &
+
+      - name: Wait for both
+        run: |
+          for i in $(seq 1 90); do
+            curl -sf http://localhost:8001/health && curl -sf -o /dev/null http://localhost:4201 && exit 0
+            sleep 2
+          done
+          exit 1
+
+      - name: Run browser tests
+        working-directory: e2e
+        run: pytest -v

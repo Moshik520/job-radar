@@ -95,6 +95,7 @@ GitHub Actions runs everything on every push.
 ```bash
 cd backend && pytest                          # needs MongoDB running for the API tests
 cd frontend && npx ng test --watch=false
+cd e2e && pytest                             # browser tests, see e2e/README.md
 ```
 
 Backend (pytest, 136 tests):
@@ -106,6 +107,11 @@ Backend (pytest, 136 tests):
 Frontend (Vitest, 60 tests): components rendered with `HttpTestingController` in place of the API. Covers loading,
 empty and error states, retry, paging, opening and closing job cards, the job type dropdown, saving jobs, and
 checks that scripts in a job description get stripped.
+
+Browser tests (in `e2e/`): a few Selenium tests with page objects for the main flows (job list order, search,
+filtering by two job types, opening cards and "Collapse all"), and Playwright tests that mock the API to check
+the error screen, the retry button and a job that was closed on the company's site. They run against their own
+API and database with fixed test data. See [e2e/README.md](e2e/README.md).
 
 Two bugs were found by these tests: the status dropdown in My Applications always showed "saved" after a reload,
 and the results counter said "1–20" on pages with fewer jobs.
@@ -129,7 +135,7 @@ frontend/src/app/
 
 ## Next
 
-- [ ] Browser tests with Selenium (page objects) and Playwright (mocked API responses)
+- [ ] More browser tests (job page, saving jobs, My Applications)
 - [ ] Run the backend and frontend in Docker too, and scan on a schedule
 - [ ] Deploy it
 - [ ] Rank jobs against an uploaded CV

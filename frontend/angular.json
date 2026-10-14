@@ -53,6 +53,17 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "e2e": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/app/api.ts",
+                  "with": "src/app/api.e2e.ts"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -65,6 +76,10 @@
             },
             "development": {
               "buildTarget": "frontend:build:development"
+            },
+            "e2e": {
+              "buildTarget": "frontend:build:e2e",
+              "port": 4201
             }
           },
           "defaultConfiguration": "development"
