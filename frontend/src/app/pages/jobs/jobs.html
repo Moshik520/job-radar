@@ -6,16 +6,6 @@
     [value]="search()"
     (input)="onSearchInput($any($event.target).value)"
   />
-
-  <label class="checkbox">
-    <input
-      type="checkbox"
-      data-testid="israel-only"
-      [checked]="israelOnly()"
-      (change)="onIsraelOnlyChange($any($event.target).checked)"
-    />
-    Israel only
-  </label>
 </div>
 
 @if (error()) {

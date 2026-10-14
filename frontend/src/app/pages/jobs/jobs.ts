@@ -16,7 +16,6 @@ export class Jobs {
   private searchTimer?: ReturnType<typeof setTimeout>;
 
   protected readonly search = this.jobsService.search;
-  protected readonly israelOnly = this.jobsService.israelOnly;
   protected readonly page = this.jobsService.page;
   protected readonly isLoading = this.jobsService.jobsPage.isLoading;
   protected readonly error = this.jobsService.jobsPage.error;
@@ -37,10 +36,6 @@ export class Jobs {
   onSearchInput(value: string) {
     clearTimeout(this.searchTimer);
     this.searchTimer = setTimeout(() => this.jobsService.setSearch(value.trim()), SEARCH_DEBOUNCE_MS);
-  }
-
-  onIsraelOnlyChange(checked: boolean) {
-    this.jobsService.setIsraelOnly(checked);
   }
 
   goToPage(page: number) {

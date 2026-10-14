@@ -1,4 +1,4 @@
-"""Scan every company's job board and store the open jobs in MongoDB.
+"""Scan every company's job board and store its open jobs in Israel in MongoDB.
 
 Run from the backend folder:  python -m app.scanner
 """
@@ -28,13 +28,15 @@ async def scan_company(client: httpx.AsyncClient, semaphore: asyncio.Semaphore, 
     async with semaphore:
         try:
             fetch_jobs = FETCHERS[company["ats"]]
-            jobs = await fetch_jobs(client, company)
+            all_jobs = await fetch_jobs(client, company)
         except Exception as error:  # one broken board must never stop the whole scan
             await companies_collection.update_one(
                 {"_id": company["_id"]},
                 {"$set": {"last_error": str(error)}},
             )
             return 0
+        # The site is for job seekers in Israel; jobs elsewhere are never stored.
+        jobs = [job for job in all_jobs if job.is_israel]
         await save_jobs(jobs)
         await companies_collection.update_one(
             {"_id": company["_id"]},

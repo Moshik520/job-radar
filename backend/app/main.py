@@ -45,7 +45,7 @@ async def greenhouse_jobs(board: str) -> list[Job]:
 
 @app.post("/scan/greenhouse/{board}")
 async def scan_greenhouse(board: str):
-    jobs = await greenhouse_jobs(board)
+    jobs = [job for job in await greenhouse_jobs(board) if job.is_israel]
     for job in jobs:
         await jobs_collection.update_one(
             {"_id": job.id},
@@ -58,7 +58,6 @@ async def scan_greenhouse(board: str):
 @app.get("/jobs")
 async def list_jobs(
     search: str = "",
-    israel_only: bool = False,
     source: JobSource | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -66,8 +65,6 @@ async def list_jobs(
     query = {}
     if search:
         query["title"] = {"$regex": re.escape(search), "$options": "i"}
-    if israel_only:
-        query["is_israel"] = True
     if source:
         query["source"] = source
 
