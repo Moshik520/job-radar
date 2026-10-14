@@ -6,6 +6,15 @@
     [value]="search()"
     (input)="onSearchInput($any($event.target).value)"
   />
+  <label class="toggle" title="When off, starred jobs appear only on the Favorites page">
+    <input
+      type="checkbox"
+      data-testid="show-favorites"
+      [checked]="showFavorites()"
+      (change)="onShowFavoritesChange($any($event.target).checked)"
+    />
+    Show favorites
+  </label>
   <app-category-filter
     [selected]="categories()"
     [counts]="categoryCounts()"
@@ -42,7 +51,9 @@
         [job]="job"
         [expandable]="true"
         [expanded]="expandedIds().has(job.id)"
+        [removable]="true"
         (toggled)="toggleJob(job.id)"
+        (removed)="removeJob(job)"
       />
     } @empty {
       <p class="no-results" data-testid="no-results">No jobs match your search.</p>
@@ -60,4 +71,17 @@
       </button>
     </nav>
   }
+}
+
+@if (lastRemoved(); as job) {
+  <div class="toast" role="status" data-testid="removed-toast">
+    <span>Removed “{{ job.title }}”. It won't come back in future scans.</span>
+    <button type="button" data-testid="undo-remove" (click)="undoRemove()">Undo</button>
+  </div>
+}
+@if (removeError()) {
+  <div class="toast error" role="alert" data-testid="remove-error">
+    <span>Couldn't remove the job. Try again.</span>
+    <button type="button" (click)="removeError.set(false)">Close</button>
+  </div>
 }

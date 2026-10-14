@@ -1,10 +1,11 @@
 import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { CategoryFilter } from '../../components/category-filter/category-filter';
 import { JobCard } from '../../components/job-card/job-card';
-import { Category, JobsPage } from '../../models/job';
+import { Category, Job, JobsPage } from '../../models/job';
 import { JobsService, PAGE_SIZE } from '../../services/jobs';
 
 const SEARCH_DEBOUNCE_MS = 300;
+const UNDO_SECONDS = 8;
 
 @Component({
   imports: [JobCard, CategoryFilter],
@@ -15,11 +16,15 @@ const SEARCH_DEBOUNCE_MS = 300;
 export class Jobs {
   private readonly jobsService = inject(JobsService);
   private searchTimer?: ReturnType<typeof setTimeout>;
+  private undoTimer?: ReturnType<typeof setTimeout>;
 
   protected readonly search = this.jobsService.search;
   protected readonly page = this.jobsService.page;
   protected readonly categories = this.jobsService.categories;
+  protected readonly showFavorites = this.jobsService.showFavorites;
   protected readonly expandedIds = signal<ReadonlySet<string>>(new Set());
+  protected readonly lastRemoved = signal<Job | null>(null);
+  protected readonly removeError = signal(false);
   protected readonly categoryCounts = computed(() =>
     this.jobsService.categoryCounts.hasValue() ? this.jobsService.categoryCounts.value() : [],
   );
@@ -56,8 +61,34 @@ export class Jobs {
     });
   }
 
+  async removeJob(job: Job) {
+    this.removeError.set(false);
+    try {
+      await this.jobsService.removeJob(job.id);
+    } catch {
+      this.removeError.set(true);
+      return;
+    }
+    this.lastRemoved.set(job);
+    clearTimeout(this.undoTimer);
+    this.undoTimer = setTimeout(() => this.lastRemoved.set(null), UNDO_SECONDS * 1000);
+  }
+
+  async undoRemove() {
+    const job = this.lastRemoved();
+    if (!job) {
+      return;
+    }
+    this.lastRemoved.set(null);
+    await this.jobsService.restoreJob(job.id);
+  }
+
   collapseAll() {
     this.expandedIds.set(new Set());
+  }
+
+  onShowFavoritesChange(show: boolean) {
+    this.jobsService.setShowFavorites(show);
   }
 
   onCategoriesChange(categories: Category[]) {

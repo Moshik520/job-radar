@@ -2,15 +2,16 @@
 import os
 import re
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from app.db import ensure_indexes, jobs_collection
+from app.db import details_collection, ensure_indexes, favorites_collection, hidden_collection, jobs_collection
 from app.details import HTTP_HEADERS, get_details
 from app.models import Category, CategoryCount, Job, JobDetails, JobSource, JobsPage
 from app.providers import greenhouse
-from app.scanner import remove_closed_jobs, save_jobs
+from app.scanner import hidden_job_ids, remove_closed_jobs, save_jobs
 
 
 @asynccontextmanager
@@ -49,15 +50,24 @@ async def greenhouse_jobs(board: str) -> list[Job]:
 
 @app.post("/scan/greenhouse/{board}")
 async def scan_greenhouse(board: str):
-    jobs = [job for job in await greenhouse_jobs(board) if job.is_israel]
+    hidden = await hidden_job_ids(f"greenhouse:{board}")
+    jobs = [job for job in await greenhouse_jobs(board) if job.is_israel and job.id not in hidden]
     await save_jobs(jobs)
     removed = await remove_closed_jobs(f"greenhouse:{board}", [job.id for job in jobs])
     return {"saved": len(jobs), "removed": removed}
 
 
-def build_query(search: str, source: JobSource | None, categories: list[Category]) -> dict:
+async def favorite_ids() -> list[str]:
+    return [doc["_id"] async for doc in favorites_collection.find({}, {"_id": 1})]
+
+
+async def build_query(
+    search: str, source: JobSource | None, categories: list[Category], hide_favorites: bool = False
+) -> dict:
     """The MongoDB filter shared by the job list and the category counts."""
     query = {}
+    if hide_favorites:
+        query["_id"] = {"$nin": await favorite_ids()}
     if search:
         query["title"] = {"$regex": re.escape(search), "$options": "i"}
     if source:
@@ -72,10 +82,11 @@ async def list_jobs(
     search: str = "",
     source: JobSource | None = None,
     category: list[Category] = Query(default=[]),
+    hide_favorites: bool = False,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ) -> JobsPage:
-    query = build_query(search, source, category)
+    query = await build_query(search, source, category, hide_favorites)
     total = await jobs_collection.count_documents(query)
     cursor = (
         jobs_collection.find(query)
@@ -93,10 +104,12 @@ async def list_jobs(
 
 
 @app.get("/jobs/categories")
-async def job_categories(search: str = "", source: JobSource | None = None) -> list[CategoryCount]:
+async def job_categories(
+    search: str = "", source: JobSource | None = None, hide_favorites: bool = False
+) -> list[CategoryCount]:
     """How many jobs each category has for the current search (the category filter itself is ignored)."""
     pipeline = [
-        {"$match": build_query(search, source, [])},
+        {"$match": await build_query(search, source, [], hide_favorites)},
         {"$group": {"_id": "$category", "count": {"$sum": 1}}},
         {"$sort": {"count": -1}},
     ]
@@ -129,3 +142,54 @@ async def get_job(job_id: str) -> Job:
     if document is None:
         raise HTTPException(status_code=404, detail="Job not found")
     return Job(**document)
+
+
+@app.delete("/jobs/{job_id:path}", status_code=204)
+async def remove_job(job_id: str) -> None:
+    """Remove a job from the site for good: future scans skip it. A copy is kept so it can be restored."""
+    document = await jobs_collection.find_one({"_id": job_id})
+    if document is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    await hidden_collection.update_one(
+        {"_id": job_id},
+        {"$set": {"job": document, "hidden_at": datetime.now(UTC)}},
+        upsert=True,
+    )
+    await jobs_collection.delete_one({"_id": job_id})
+    await details_collection.delete_one({"_id": job_id})
+
+
+@app.post("/jobs/{job_id:path}/restore")
+async def restore_job(job_id: str) -> Job:
+    """Undo a removal."""
+    hidden = await hidden_collection.find_one({"_id": job_id})
+    if hidden is None:
+        raise HTTPException(status_code=404, detail="This job was not removed")
+    await jobs_collection.replace_one({"_id": job_id}, hidden["job"], upsert=True)
+    await hidden_collection.delete_one({"_id": job_id})
+    return Job(**hidden["job"])
+
+
+@app.get("/favorites")
+async def list_favorites() -> list[Job]:
+    """Starred jobs, most recently starred first. Copies are kept, so closed jobs stay in the list."""
+    cursor = favorites_collection.find().sort("starred_at", -1)
+    return [Job(**doc["job"]) async for doc in cursor]
+
+
+@app.put("/favorites/{job_id:path}")
+async def add_favorite(job_id: str, job: Job) -> Job:
+    if job.id != job_id:
+        raise HTTPException(status_code=422, detail="The job in the body doesn't match the URL")
+    await favorites_collection.update_one(
+        {"_id": job_id},
+        {"$set": {"job": job.model_dump()}, "$setOnInsert": {"starred_at": datetime.now(UTC)}},
+        upsert=True,
+    )
+    return job
+
+
+@app.delete("/favorites/{job_id:path}", status_code=204)
+async def remove_favorite(job_id: str) -> None:
+    await favorites_collection.delete_one({"_id": job_id})
+

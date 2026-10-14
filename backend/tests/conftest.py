@@ -38,7 +38,7 @@ def api(mongo):
 @pytest.fixture()
 def db(mongo):
     """An empty test database for every test."""
-    for name in ("jobs", "companies", "job_details"):
+    for name in ("jobs", "companies", "job_details", "hidden_jobs", "favorites"):
         mongo[name].delete_many({})
     return mongo
 

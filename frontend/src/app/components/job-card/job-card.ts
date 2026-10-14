@@ -16,7 +16,9 @@ export class JobCard {
   readonly job = input.required<Job>();
   readonly expandable = input(false);
   readonly expanded = input(false);
+  readonly removable = input(false);
   readonly toggled = output<void>();
+  readonly removed = output<void>();
 
   private readonly favorites = inject(FavoritesService);
 

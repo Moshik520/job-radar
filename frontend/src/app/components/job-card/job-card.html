@@ -34,6 +34,18 @@
       >
         {{ isFavorite() ? '★' : '☆' }}
       </button>
+      @if (removable()) {
+        <button
+          type="button"
+          class="remove"
+          data-testid="remove-job-button"
+          aria-label="Remove this job"
+          title="Remove this job. It won't come back in future scans."
+          (click)="removed.emit()"
+        >
+          ✕
+        </button>
+      }
       @if (expandable()) {
         <span class="chevron" aria-hidden="true">{{ expanded() ? '▴' : '▾' }}</span>
       }

@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 import httpx
 from pymongo import UpdateOne
 
-from app.db import companies_collection, details_collection, ensure_indexes, jobs_collection
+from app.db import companies_collection, details_collection, ensure_indexes, hidden_collection, jobs_collection
 from app.providers import FETCHERS
 
 MAX_CONCURRENT_REQUESTS = 30
@@ -30,6 +30,12 @@ async def save_jobs(jobs) -> None:
             update["$setOnInsert"] = {"published_at": first_seen}
         operations.append(UpdateOne({"_id": job.id}, update, upsert=True))
     await jobs_collection.bulk_write(operations)
+
+
+async def hidden_job_ids(company_id: str) -> set[str]:
+    """Jobs of this company that the user removed from the site."""
+    query = {"_id": {"$regex": f"^{re.escape(company_id)}:"}}
+    return {doc["_id"] async for doc in hidden_collection.find(query, {"_id": 1})}
 
 
 async def remove_closed_jobs(company_id: str, open_job_ids: list[str]) -> int:
@@ -57,7 +63,8 @@ async def scan_company(client: httpx.AsyncClient, semaphore: asyncio.Semaphore, 
             )
             return 0
         # The site is for job seekers in Israel; jobs elsewhere are never stored.
-        jobs = [job for job in all_jobs if job.is_israel]
+        hidden = await hidden_job_ids(company["_id"])
+        jobs = [job for job in all_jobs if job.is_israel and job.id not in hidden]
         await save_jobs(jobs)
         if not company.get("partial"):
             await remove_closed_jobs(company["_id"], [job.id for job in jobs])

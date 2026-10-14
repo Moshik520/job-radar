@@ -25,6 +25,8 @@ describe('Jobs page', () => {
     await fixture.whenStable();
   }
 
+  const settle = () => new Promise((resolve) => setTimeout(resolve));
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Jobs],
@@ -112,4 +114,46 @@ describe('Jobs page', () => {
     expect(all('job-card').every((card) => card.getAttribute('aria-expanded') === 'false')).toBe(true);
     expect(collapseAll.disabled).toBe(true);
   });
+
+  it('✕ removes a job, and Undo brings it back', async () => {
+    const job = makeJob({ id: 'greenhouse:acme:1', title: 'QA Engineer' });
+    await answerJobs(makePage([job]));
+
+    find('remove-job-button')!.click();
+    TestBed.tick();
+    const remove = http.expectOne((r) => r.method === 'DELETE');
+    expect(remove.request.url).toBe(`${API_URL}/jobs/${encodeURIComponent(job.id)}`);
+    remove.flush(null, { status: 204, statusText: 'No Content' });
+    await settle(); // the component awaits the DELETE before refreshing the list
+    await answerJobs(makePage([]));
+
+    expect(find('removed-toast')?.textContent).toContain('QA Engineer');
+
+    find('undo-remove')!.click();
+    TestBed.tick();
+    const restore = http.expectOne((r) => r.method === 'POST');
+    expect(restore.request.url).toBe(`${API_URL}/jobs/${encodeURIComponent(job.id)}/restore`);
+    restore.flush(job);
+    await settle();
+    await answerJobs(makePage([job]));
+
+    expect(find('removed-toast')).toBeNull();
+    expect(all('job-card')).toHaveLength(1);
+  });
+
+  it('"Show favorites" off asks the server to leave starred jobs out, and is remembered', async () => {
+    localStorage.clear();
+    await answerJobs(makePage([makeJob()]));
+    const checkbox = find('show-favorites') as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
+    expect(jobsRequest()).toBeUndefined();
+
+    checkbox.checked = false;
+    checkbox.dispatchEvent(new Event('change'));
+    TestBed.tick();
+
+    expect(jobsRequest().request.params.get('hide_favorites')).toBe('true');
+    expect(localStorage.getItem('job-radar.show-favorites')).toBe('false');
+  });
 });
+

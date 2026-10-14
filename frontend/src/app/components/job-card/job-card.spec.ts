@@ -29,7 +29,10 @@ describe('JobCard', () => {
     await fixture.whenStable();
   });
 
-  afterEach(() => http.verify());
+  afterEach(() => {
+    http.match(`${API_URL}/favorites`).forEach((request) => request.flush([]));
+    http.verify();
+  });
 
   it('shows the title, company, location and category', () => {
     expect(find('job-card-link')?.textContent?.trim()).toBe('QA Automation Engineer');
@@ -139,10 +142,29 @@ describe('JobCard', () => {
     expect(star.getAttribute('aria-pressed')).toBe('false');
 
     star.click();
+    TestBed.tick();
+    http.expectOne((r) => r.method === 'PUT').flush(job);
     await fixture.whenStable();
 
     expect(star.getAttribute('aria-pressed')).toBe('true');
     expect(TestBed.inject(FavoritesService).isFavorite(job.id)).toBe(true);
+    expect(toggled).not.toHaveBeenCalled();
+  });
+
+  it('shows ✕ only where removing is allowed, and clicking it does not open the card', async () => {
+    expect(find('remove-job-button')).toBeNull();
+
+    fixture.componentRef.setInput('expandable', true);
+    fixture.componentRef.setInput('removable', true);
+    await fixture.whenStable();
+    const removed = vi.fn();
+    const toggled = vi.fn();
+    fixture.componentInstance.removed.subscribe(removed);
+    fixture.componentInstance.toggled.subscribe(toggled);
+
+    (find('remove-job-button') as HTMLButtonElement).click();
+
+    expect(removed).toHaveBeenCalledTimes(1);
     expect(toggled).not.toHaveBeenCalled();
   });
 });

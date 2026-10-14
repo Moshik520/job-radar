@@ -18,7 +18,8 @@ Built with Angular, Python (FastAPI), MongoDB and pytest.
 - Click a job to read the full description, pulled from the company's site
 - Newest jobs first, with the posting date on every card
 - Jobs removed from a company's site disappear on the next scan
-- Star jobs to keep them in Favorites
+- Star jobs to keep them in Favorites, and choose whether starred jobs also show up in the main list
+- Remove a job with ✕ so later scans never bring it back
 - Save jobs and track them: saved, applied, interview, offer, rejected
 
 ## How it works

@@ -265,3 +265,95 @@ def test_scan_of_unknown_company_is_404(api, jobs, monkeypatch):
     assert response.status_code == 404
     assert response.json() == {"detail": "Company not found"}
     assert jobs.jobs.count_documents({}) == 5  # nothing deleted
+
+
+# ---------- DELETE /jobs/{id} and restore ----------
+
+def test_removed_job_disappears_from_the_list(api, jobs):
+    response = api.delete(f"/jobs/{QA['_id']}")
+
+    assert response.status_code == 204
+    assert "QA Automation Engineer" not in titles(api.get("/jobs"))
+    assert api.get(f"/jobs/{QA['_id']}").status_code == 404
+
+
+def test_removing_an_unknown_job_is_404(api, jobs):
+    assert api.delete("/jobs/greenhouse:acme:999").status_code == 404
+
+
+def test_a_removed_job_can_be_restored(api, jobs):
+    api.delete(f"/jobs/{QA['_id']}")
+
+    response = api.post(f"/jobs/{QA['_id']}/restore")
+
+    assert response.status_code == 200
+    assert "QA Automation Engineer" in titles(api.get("/jobs"))
+
+
+def test_scan_does_not_bring_back_a_removed_job(api, jobs, monkeypatch):
+    api.delete("/jobs/greenhouse:acme:2")
+    board = [scanned_job("2", "Senior Backend Engineer", "Tel Aviv"), scanned_job("10", "QA Engineer", "Haifa")]
+
+    async def fake_fetch_jobs(client, company):
+        return board
+
+    monkeypatch.setattr(greenhouse, "fetch_jobs", fake_fetch_jobs)
+
+    response = api.post("/scan/greenhouse/acme")
+
+    assert response.json()["saved"] == 1
+    assert jobs.jobs.count_documents({"_id": "greenhouse:acme:2"}) == 0
+
+
+# ---------- favorites ----------
+
+def api_job_fields(document: dict) -> dict:
+    return {
+        "id": document["_id"], "title": document["title"], "company": document["company"],
+        "location": document["location"], "url": document["url"], "source": document["source"],
+        "publishedAt": document["published_at"], "updatedAt": document["updated_at"],
+        "isIsrael": document["is_israel"], "category": document["category"],
+    }
+
+
+def star(api, document):
+    return api.put(f"/favorites/{quote(document['_id'], safe='')}", json=api_job_fields(document))
+
+
+def test_starred_jobs_are_listed_newest_star_first(api, jobs):
+    star(api, QA)
+    star(api, BACKEND)
+
+    favorites = api.get("/favorites").json()
+
+    assert [job["title"] for job in favorites] == ["Senior Backend Engineer", "QA Automation Engineer"]
+
+
+def test_unstarring_removes_from_favorites(api, jobs):
+    star(api, QA)
+
+    assert api.delete(f"/favorites/{QA['_id']}").status_code == 204
+    assert api.get("/favorites").json() == []
+
+
+def test_star_body_must_match_the_url(api, jobs):
+    response = api.put(f"/favorites/{QA['_id']}", json=api_job_fields(BACKEND))
+
+    assert response.status_code == 422
+
+
+def test_hide_favorites_leaves_starred_jobs_out_of_the_list_and_counts(api, jobs):
+    star(api, QA)
+    star(api, WORKDAY)
+
+    shown = api.get("/jobs").json()
+    hidden = api.get("/jobs", params={"hide_favorites": True}).json()
+    counts = {r["category"]: r["count"] for r in api.get("/jobs/categories", params={"hide_favorites": True}).json()}
+
+    assert shown["total"] == 5
+    assert [item["title"] for item in hidden["items"]] == [
+        "Senior Backend Engineer", "Full Stack Developer", "C++ Developer (Senior)",
+    ]
+    assert hidden["total"] == 3
+    assert "qa" not in counts
+

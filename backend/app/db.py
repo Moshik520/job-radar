@@ -10,6 +10,8 @@ db = client[MONGO_DB]
 jobs_collection = db["jobs"]
 companies_collection = db["companies"]
 details_collection = db["job_details"]  # full descriptions, keyed by job id
+favorites_collection = db["favorites"]  # starred jobs, with a copy of each job
+hidden_collection = db["hidden_jobs"]  # jobs the user removed; the scanner never stores them again
 
 
 async def ensure_indexes() -> None:
