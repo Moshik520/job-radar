@@ -3,6 +3,7 @@ import html
 import httpx
 
 from app.classify import classify_category
+from app.dates import to_utc_iso
 from app.locations import is_israel
 from app.models import Job, JobDetails
 from app.providers.common import get_json, make_details
@@ -22,8 +23,8 @@ def to_job(raw: dict, board: str) -> Job:
         location=location,
         url=raw["absolute_url"],
         source="greenhouse",
-        published_at=published_at,
-        updated_at=raw["updated_at"],
+        published_at=to_utc_iso(published_at),
+        updated_at=to_utc_iso(raw["updated_at"]),
         is_israel=is_israel(location),
         category=classify_category(title),
     )

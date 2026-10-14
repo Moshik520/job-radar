@@ -6,6 +6,7 @@ import random
 import httpx
 
 from app.classify import classify_category
+from app.dates import to_utc_iso
 from app.locations import is_israel
 from app.models import DetailField, Job, JobDetails, JobSource
 
@@ -86,6 +87,7 @@ def make_job(
 ) -> Job:
     location = (location or "").strip()
     title = (title or "").strip()
+    published_at, updated_at = to_utc_iso(published_at), to_utc_iso(updated_at)
     return Job(
         id=f"{source}:{company['board']}:{native_id}",
         title=title,

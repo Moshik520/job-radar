@@ -63,6 +63,18 @@
   min-width: 0;
 }
 
+.side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.posted {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
 .chevron {
   color: var(--color-text-muted);
   font-size: 14px;

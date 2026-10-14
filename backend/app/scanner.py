@@ -4,12 +4,13 @@ Run from the backend folder:  python -m app.scanner
 """
 
 import asyncio
+import re
 from datetime import UTC, datetime
 
 import httpx
 from pymongo import UpdateOne
 
-from app.db import companies_collection, ensure_indexes, jobs_collection
+from app.db import companies_collection, details_collection, ensure_indexes, jobs_collection
 from app.providers import FETCHERS
 
 MAX_CONCURRENT_REQUESTS = 30
@@ -17,10 +18,30 @@ MAX_CONCURRENT_REQUESTS = 30
 
 async def save_jobs(jobs) -> None:
     """Upsert all jobs of one company in a single round trip to MongoDB."""
-    if jobs:
-        await jobs_collection.bulk_write(
-            [UpdateOne({"_id": job.id}, {"$set": job.model_dump()}, upsert=True) for job in jobs]
-        )
+    if not jobs:
+        return
+    first_seen = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    operations = []
+    for job in jobs:
+        fields = job.model_dump()
+        update = {"$set": fields}
+        if fields["published_at"] is None:  # no date from the ATS: keep the time we first saw the job
+            del fields["published_at"]
+            update["$setOnInsert"] = {"published_at": first_seen}
+        operations.append(UpdateOne({"_id": job.id}, update, upsert=True))
+    await jobs_collection.bulk_write(operations)
+
+
+async def remove_closed_jobs(company_id: str, open_job_ids: list[str]) -> int:
+    """Delete the company's stored jobs that are no longer on its board. Returns how many were deleted."""
+    query = {
+        "_id": {"$regex": f"^{re.escape(company_id)}:", "$nin": open_job_ids},  # job ids start with the company id
+    }
+    closed_ids = [doc["_id"] async for doc in jobs_collection.find(query, {"_id": 1})]
+    if closed_ids:
+        await jobs_collection.delete_many({"_id": {"$in": closed_ids}})
+        await details_collection.delete_many({"_id": {"$in": closed_ids}})
+    return len(closed_ids)
 
 
 async def scan_company(client: httpx.AsyncClient, semaphore: asyncio.Semaphore, company: dict) -> int:
@@ -38,6 +59,8 @@ async def scan_company(client: httpx.AsyncClient, semaphore: asyncio.Semaphore, 
         # The site is for job seekers in Israel; jobs elsewhere are never stored.
         jobs = [job for job in all_jobs if job.is_israel]
         await save_jobs(jobs)
+        if not company.get("partial"):
+            await remove_closed_jobs(company["_id"], [job.id for job in jobs])
         await companies_collection.update_one(
             {"_id": company["_id"]},
             {"$set": {

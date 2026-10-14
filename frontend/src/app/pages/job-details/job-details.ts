@@ -1,12 +1,13 @@
 import { httpResource } from '@angular/common/http';
 import { Component, computed, inject, input } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { API_URL } from '../../api';
 import { Job } from '../../models/job';
 import { ApplicationsService } from '../../services/applications';
 
 @Component({
-  imports: [RouterLink],
+  imports: [RouterLink, DatePipe],
   selector: 'app-job-details',
   styleUrl: './job-details.scss',
   templateUrl: './job-details.html',

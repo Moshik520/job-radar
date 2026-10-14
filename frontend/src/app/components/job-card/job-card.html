@@ -16,9 +16,16 @@
         <span class="tag" data-testid="job-category">{{ categoryLabels[category] }}</span>
       }
     </div>
-    @if (expandable()) {
-      <span class="chevron" aria-hidden="true">{{ expanded() ? '▴' : '▾' }}</span>
-    }
+    <div class="side">
+      @if (postedLabel()) {
+        <time class="posted" data-testid="job-posted" [attr.datetime]="job().publishedAt" [title]="postedTitle()">
+          {{ postedLabel() }}
+        </time>
+      }
+      @if (expandable()) {
+        <span class="chevron" aria-hidden="true">{{ expanded() ? '▴' : '▾' }}</span>
+      }
+    </div>
   </div>
 
   @if (expanded()) {

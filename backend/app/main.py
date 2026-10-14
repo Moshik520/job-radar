@@ -9,6 +9,7 @@ from app.db import ensure_indexes, jobs_collection
 from app.details import HTTP_HEADERS, get_details
 from app.models import Category, CategoryCount, Job, JobDetails, JobSource, JobsPage
 from app.providers import greenhouse
+from app.scanner import remove_closed_jobs, save_jobs
 
 
 @asynccontextmanager
@@ -47,13 +48,9 @@ async def greenhouse_jobs(board: str) -> list[Job]:
 @app.post("/scan/greenhouse/{board}")
 async def scan_greenhouse(board: str):
     jobs = [job for job in await greenhouse_jobs(board) if job.is_israel]
-    for job in jobs:
-        await jobs_collection.update_one(
-            {"_id": job.id},
-            {"$set": job.model_dump()},
-            upsert=True,
-        )
-    return {"saved": len(jobs)}
+    await save_jobs(jobs)
+    removed = await remove_closed_jobs(f"greenhouse:{board}", [job.id for job in jobs])
+    return {"saved": len(jobs), "removed": removed}
 
 
 def build_query(search: str, source: JobSource | None, categories: list[Category]) -> dict:
@@ -80,7 +77,7 @@ async def list_jobs(
     total = await jobs_collection.count_documents(query)
     cursor = (
         jobs_collection.find(query)
-        .sort("published_at", -1)
+        .sort([("published_at", -1), ("_id", 1)])
         .skip((page - 1) * page_size)
         .limit(page_size)
     )

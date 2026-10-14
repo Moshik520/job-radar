@@ -53,6 +53,8 @@ async def fetch_jobs(client: httpx.AsyncClient, company: dict) -> list[Job]:
         offset += PAGE_SIZE
         if not batch or offset >= min(total, MAX_JOBS):
             break
+    if total > MAX_JOBS:
+        company["partial"] = True  # tells the scanner not to delete jobs it couldn't see
     return [to_job(raw, company) for raw in postings if raw.get("externalPath")]
 
 

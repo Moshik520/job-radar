@@ -25,7 +25,7 @@ def test_maps_greenhouse_fields_to_job():
 def test_missing_first_published_falls_back_to_updated_at():
     job = to_job({**RAW_JOB, "first_published": None}, "riskified")
 
-    assert job.published_at == "2026-09-12T08:00:00-04:00"
+    assert job.published_at == "2026-09-12T12:00:00Z"  # updated_at, normalized to UTC
 
 
 def test_missing_location_becomes_empty_string():
