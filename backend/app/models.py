@@ -3,7 +3,10 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
-JobSource = Literal["greenhouse", "lever", "ashby", "workday", "comeet"]
+JobSource = Literal[
+    "greenhouse", "ashby", "lever", "workable", "recruitee", "personio", "rippling", "workday", "comeet"
+]
+
 
 
 class Job(BaseModel):
@@ -16,8 +19,8 @@ class Job(BaseModel):
     location: str
     url: str
     source: JobSource
-    published_at: str
-    updated_at: str
+    published_at: str | None
+    updated_at: str | None
     is_israel: bool
 
 

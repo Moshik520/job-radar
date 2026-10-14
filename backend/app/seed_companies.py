@@ -17,16 +17,14 @@ async def main():
     with open(COMPANIES_CSV, encoding="utf-8") as file:
         reader = csv.DictReader(file)
         for row in reader:
-            if row["ats"] != "greenhouse":
-                continue
             await companies_collection.update_one(
-                {"_id": f"greenhouse:{row['board']}"},
-                {"$set": {"ats": row["ats"], "board": row["board"]}},
+                {"_id": f"{row['ats']}:{row['board']}"},
+                {"$set": row},
                 upsert=True,
             )
             count += 1
 
-    print(f"Loaded {count} Greenhouse companies")
+    print(f"Loaded {count} companies")
 
 
 if __name__ == "__main__":

@@ -10,9 +10,9 @@ import httpx
 from pymongo import UpdateOne
 
 from app.db import companies_collection, ensure_indexes, jobs_collection
-from app.providers import greenhouse
+from app.providers import FETCHERS
 
-MAX_CONCURRENT_REQUESTS = 20
+MAX_CONCURRENT_REQUESTS = 30
 
 
 async def save_jobs(jobs) -> None:
@@ -27,7 +27,8 @@ async def scan_company(client: httpx.AsyncClient, semaphore: asyncio.Semaphore, 
     """Scan one company. Returns how many jobs were saved."""
     async with semaphore:
         try:
-            jobs = await greenhouse.fetch_jobs(client, company["board"])
+            fetch_jobs = FETCHERS[company["ats"]]
+            jobs = await fetch_jobs(client, company)
         except Exception as error:  # one broken board must never stop the whole scan
             await companies_collection.update_one(
                 {"_id": company["_id"]},
@@ -48,11 +49,11 @@ async def scan_company(client: httpx.AsyncClient, semaphore: asyncio.Semaphore, 
 
 async def scan_all() -> None:
     await ensure_indexes()
-    companies = await companies_collection.find({"ats": "greenhouse"}).to_list()
+    companies = await companies_collection.find({"ats": {"$in": list(FETCHERS)}}).to_list()
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
     started = datetime.now(UTC)
 
-    async with httpx.AsyncClient(timeout=20) as client:
+    async with httpx.AsyncClient(timeout=30, headers={"Accept": "application/json"}, follow_redirects=True) as client:
         results = await asyncio.gather(
             *(scan_company(client, semaphore, company) for company in companies)
         )

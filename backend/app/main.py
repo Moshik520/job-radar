@@ -36,7 +36,7 @@ def health():
 async def greenhouse_jobs(board: str) -> list[Job]:
     async with httpx.AsyncClient() as client:
         try:
-            return await greenhouse.fetch_jobs(client, board)
+            return await greenhouse.fetch_jobs(client, {"board": board})
         except httpx.HTTPStatusError as error:
             if error.response.status_code == 404:
                 raise HTTPException(status_code=404, detail="Company not found") from error
@@ -87,7 +87,7 @@ async def list_jobs(
     )
 
 
-@app.get("/jobs/{job_id}")
+@app.get("/jobs/{job_id:path}")  # Workday and Comeet ids contain "/"
 async def get_job(job_id: str) -> Job:
     document = await jobs_collection.find_one({"_id": job_id})
     if document is None:
