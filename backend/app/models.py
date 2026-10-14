@@ -8,6 +8,13 @@ JobSource = Literal[
 ]
 
 
+Category = Literal[
+    "qa", "fullstack", "frontend", "backend", "mobile", "software", "ai_ml", "data", "devops", "security",
+    "hardware", "it_support", "solutions", "product", "design", "ai_training",
+    "sales", "marketing", "customer_success", "operations", "finance", "legal", "hr", "admin",
+    "mechanical", "trades", "healthcare", "fitness", "education", "general_application", "other",
+]
+
 
 class Job(BaseModel):
     # Python uses snake_case, the JSON sent to Angular uses camelCase (is_israel -> isIsrael).
@@ -22,6 +29,7 @@ class Job(BaseModel):
     published_at: str | None
     updated_at: str | None
     is_israel: bool
+    category: Category = "other"
 
 
 class JobsPage(BaseModel):
@@ -31,3 +39,8 @@ class JobsPage(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class CategoryCount(BaseModel):
+    category: Category
+    count: int

@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { Job } from '../../models/job';
+import { CATEGORY_LABELS, Job } from '../../models/job';
 import { RouterLink } from '@angular/router';
 
 @Component({
@@ -10,5 +10,6 @@ import { RouterLink } from '@angular/router';
 })
 export class JobCard {
   readonly job = input.required<Job>();
+  protected readonly categoryLabels = CATEGORY_LABELS;
 }
 

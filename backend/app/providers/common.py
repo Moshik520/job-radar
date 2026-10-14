@@ -5,6 +5,7 @@ import random
 
 import httpx
 
+from app.classify import classify_category
 from app.locations import is_israel
 from app.models import Job, JobSource
 
@@ -84,9 +85,10 @@ def make_job(
     updated_at: str | None,
 ) -> Job:
     location = (location or "").strip()
+    title = (title or "").strip()
     return Job(
         id=f"{source}:{company['board']}:{native_id}",
-        title=(title or "").strip(),
+        title=title,
         company=(company_name or "").strip() or display_name(company),
         location=location,
         url=url or company.get("board_url") or "",
@@ -94,4 +96,5 @@ def make_job(
         published_at=published_at or updated_at,
         updated_at=updated_at or published_at,
         is_israel=is_israel(location),
+        category=classify_category(title),
     )

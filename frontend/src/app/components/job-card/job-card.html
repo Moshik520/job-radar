@@ -3,4 +3,7 @@
     <a [routerLink]="['/jobs', job().id]" data-testid="job-card-link">{{ job().title }}</a>
   </h3>
   <p>{{ job().company }} · {{ job().location }}</p>
+  @if (job().category; as category) {
+    <span class="tag" data-testid="job-category">{{ categoryLabels[category] }}</span>
+  }
 </article>

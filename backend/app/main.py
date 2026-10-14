@@ -6,7 +6,7 @@ import httpx
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from app.db import ensure_indexes, jobs_collection
-from app.models import Job, JobSource, JobsPage
+from app.models import Category, CategoryCount, Job, JobSource, JobsPage
 from app.providers import greenhouse
 
 
@@ -55,19 +55,27 @@ async def scan_greenhouse(board: str):
     return {"saved": len(jobs)}
 
 
-@app.get("/jobs")
-async def list_jobs(
-    search: str = "",
-    source: JobSource | None = None,
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
-) -> JobsPage:
+def build_query(search: str, source: JobSource | None, categories: list[Category]) -> dict:
+    """The MongoDB filter shared by the job list and the category counts."""
     query = {}
     if search:
         query["title"] = {"$regex": re.escape(search), "$options": "i"}
     if source:
         query["source"] = source
+    if categories:
+        query["category"] = {"$in": categories}
+    return query
 
+
+@app.get("/jobs")
+async def list_jobs(
+    search: str = "",
+    source: JobSource | None = None,
+    category: list[Category] = Query(default=[]),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+) -> JobsPage:
+    query = build_query(search, source, category)
     total = await jobs_collection.count_documents(query)
     cursor = (
         jobs_collection.find(query)
@@ -82,6 +90,18 @@ async def list_jobs(
         page=page,
         page_size=page_size,
     )
+
+
+@app.get("/jobs/categories")
+async def job_categories(search: str = "", source: JobSource | None = None) -> list[CategoryCount]:
+    """How many jobs each category has for the current search (the category filter itself is ignored)."""
+    pipeline = [
+        {"$match": build_query(search, source, [])},
+        {"$group": {"_id": "$category", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+    ]
+    rows = await (await jobs_collection.aggregate(pipeline)).to_list()
+    return [CategoryCount(category=row["_id"] or "other", count=row["count"]) for row in rows]
 
 
 @app.get("/jobs/{job_id:path}")  # Workday and Comeet ids contain "/"

@@ -28,3 +28,13 @@
     color: var(--color-text-muted);
   }
 }
+
+.tag {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 12px;
+}

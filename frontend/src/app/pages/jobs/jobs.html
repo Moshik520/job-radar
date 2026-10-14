@@ -6,6 +6,11 @@
     [value]="search()"
     (input)="onSearchInput($any($event.target).value)"
   />
+  <app-category-filter
+    [selected]="categories()"
+    [counts]="categoryCounts()"
+    (selectedChange)="onCategoriesChange($event)"
+  />
 </div>
 
 @if (error()) {

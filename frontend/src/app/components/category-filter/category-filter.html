@@ -1,0 +1,40 @@
+<button
+  type="button"
+  class="trigger"
+  data-testid="category-filter-button"
+  [class.active]="selected().length > 0"
+  [attr.aria-expanded]="isOpen()"
+  (click)="toggleOpen()"
+>
+  {{ buttonLabel() }}
+  <span class="chevron" aria-hidden="true">▾</span>
+</button>
+
+@if (isOpen()) {
+  <div class="panel" data-testid="category-filter-panel">
+    @for (group of groups(); track group.label) {
+      <div class="group">
+        <div class="group-label">{{ group.label }}</div>
+        @for (option of group.options; track option.category) {
+          <label class="option" [attr.data-testid]="'category-option-' + option.category">
+            <input
+              type="checkbox"
+              [checked]="selected().includes(option.category)"
+              (change)="toggle(option.category, $any($event.target).checked)"
+            />
+            <span class="name">{{ labels[option.category] }}</span>
+            <span class="count">{{ option.count }}</span>
+          </label>
+        }
+      </div>
+    } @empty {
+      <p class="empty">No categories for this search.</p>
+    }
+
+    @if (selected().length > 0) {
+      <button type="button" class="clear" data-testid="category-filter-clear" (click)="clear()">
+        Clear selection
+      </button>
+    }
+  </div>
+}
