@@ -1,5 +1,6 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { FavoritesService } from './services/favorites';
 
 @Component({
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
@@ -9,6 +10,8 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 })
 export class App {
   protected readonly title = signal('Job Radar');
+  private readonly favorites = inject(FavoritesService);
+  protected readonly favoritesCount = computed(() => this.favorites.favorites().length);
 }
 
 

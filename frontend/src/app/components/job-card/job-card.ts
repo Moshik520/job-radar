@@ -1,8 +1,9 @@
 import { httpResource } from '@angular/common/http';
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { API_URL } from '../../api';
 import { CATEGORY_LABELS, Job, JobDetails } from '../../models/job';
+import { FavoritesService } from '../../services/favorites';
 import { formatPostedDate } from '../../utils/posted-date';
 
 @Component({
@@ -17,7 +18,10 @@ export class JobCard {
   readonly expanded = input(false);
   readonly toggled = output<void>();
 
+  private readonly favorites = inject(FavoritesService);
+
   protected readonly categoryLabels = CATEGORY_LABELS;
+  protected readonly isFavorite = computed(() => this.favorites.ids().has(this.job().id));
   protected readonly postedLabel = computed(() => formatPostedDate(this.job().publishedAt));
   protected readonly postedTitle = computed(() =>
     this.job().publishedAt ? new Date(this.job().publishedAt!).toLocaleString('en-GB') : '',
@@ -28,10 +32,14 @@ export class JobCard {
     this.expanded() ? `${API_URL}/jobs/${encodeURIComponent(this.job().id)}/details` : undefined,
   );
 
+  toggleFavorite() {
+    this.favorites.toggle(this.job());
+  }
+
   onCardClick(event: MouseEvent) {
     const target = event.target as HTMLElement;
     // Links keep working normally, and clicks inside the open description (e.g. selecting text) don't close it.
-    if (!this.expandable() || target.closest('a') || target.closest('.details')) {
+    if (!this.expandable() || target.closest('a, button') || target.closest('.details')) {
       return;
     }
     this.toggled.emit();

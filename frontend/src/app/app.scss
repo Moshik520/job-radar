@@ -28,6 +28,14 @@
       color: var(--color-primary);
     }
   }
+
+  .count {
+    margin-left: 4px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--color-bg);
+    font-size: 12px;
+  }
 }
 
 .app-main {

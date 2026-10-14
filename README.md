@@ -18,6 +18,7 @@ Built with Angular, Python (FastAPI), MongoDB and pytest.
 - Click a job to read the full description, pulled from the company's site
 - Newest jobs first, with the posting date on every card
 - Jobs removed from a company's site disappear on the next scan
+- Star jobs to keep them in Favorites
 - Save jobs and track them: saved, applied, interview, offer, rejected
 
 ## How it works
@@ -128,7 +129,7 @@ backend/app/
   details.py       job descriptions, cached in MongoDB
 backend/data/companies.csv   company list
 frontend/src/app/
-  pages/           jobs, job page, my applications
+  pages/           jobs, job page, favorites, my applications
   components/      job card, job type filter
   services/        API calls, saved jobs
 ```

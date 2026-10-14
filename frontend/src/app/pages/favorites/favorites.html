@@ -1,0 +1,14 @@
+<h1>Favorites</h1>
+
+<section class="job-list">
+  @for (job of favorites(); track job.id) {
+    <app-job-card
+      [job]="job"
+      [expandable]="true"
+      [expanded]="expandedIds().has(job.id)"
+      (toggled)="toggleJob(job.id)"
+    />
+  } @empty {
+    <p class="empty" data-testid="no-favorites">No favorites yet. Click ☆ on a job to add it here.</p>
+  }
+</section>

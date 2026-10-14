@@ -22,6 +22,18 @@
           {{ postedLabel() }}
         </time>
       }
+      <button
+        type="button"
+        class="star"
+        data-testid="favorite-button"
+        [class.on]="isFavorite()"
+        [attr.aria-pressed]="isFavorite()"
+        [attr.aria-label]="isFavorite() ? 'Remove from favorites' : 'Add to favorites'"
+        [title]="isFavorite() ? 'Remove from favorites' : 'Add to favorites'"
+        (click)="toggleFavorite()"
+      >
+        {{ isFavorite() ? '★' : '☆' }}
+      </button>
       @if (expandable()) {
         <span class="chevron" aria-hidden="true">{{ expanded() ? '▴' : '▾' }}</span>
       }

@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { API_URL } from '../../api';
+import { FavoritesService } from '../../services/favorites';
 import { makeJob } from '../../testing/fixtures';
 import { JobCard } from './job-card';
 
@@ -16,6 +17,7 @@ describe('JobCard', () => {
   const find = (testId: string) => page().querySelector(`[data-testid="${testId}"]`);
 
   beforeEach(async () => {
+    localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [JobCard],
       providers: [provideRouter([{ path: '**', children: [] }]), provideHttpClient(), provideHttpClientTesting()],
@@ -127,5 +129,20 @@ describe('JobCard', () => {
     const error = find('job-details-error') as HTMLElement;
     expect(error).not.toBeNull();
     expect(error.querySelector('a')?.getAttribute('href')).toBe(job.url);
+  });
+
+  it('stars the job without opening the card', async () => {
+    fixture.componentRef.setInput('expandable', true);
+    const toggled = vi.fn();
+    fixture.componentInstance.toggled.subscribe(toggled);
+    const star = find('favorite-button') as HTMLButtonElement;
+    expect(star.getAttribute('aria-pressed')).toBe('false');
+
+    star.click();
+    await fixture.whenStable();
+
+    expect(star.getAttribute('aria-pressed')).toBe('true');
+    expect(TestBed.inject(FavoritesService).isFavorite(job.id)).toBe(true);
+    expect(toggled).not.toHaveBeenCalled();
   });
 });
