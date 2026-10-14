@@ -21,13 +21,29 @@
 } @else if (!jobsPage()) {
   <p class="status-message" data-testid="jobs-loading">Loading jobs...</p>
 } @else {
-  <p class="results-count" data-testid="results-count">
-    Showing {{ firstShown() }}–{{ lastShown() }} of {{ total() }} jobs
-  </p>
+  <div class="list-header">
+    <p class="results-count" data-testid="results-count">
+      Showing {{ firstShown() }}–{{ lastShown() }} of {{ total() }} jobs
+    </p>
+    <button
+      type="button"
+      class="collapse-all"
+      data-testid="collapse-all"
+      [disabled]="expandedIds().size === 0"
+      (click)="collapseAll()"
+    >
+      Collapse all
+    </button>
+  </div>
 
   <section class="job-list" [class.updating]="isLoading()">
     @for (job of jobs(); track job.id) {
-      <app-job-card [job]="job" />
+      <app-job-card
+        [job]="job"
+        [expandable]="true"
+        [expanded]="expandedIds().has(job.id)"
+        (toggled)="toggleJob(job.id)"
+      />
     } @empty {
       <p class="no-results" data-testid="no-results">No jobs match your search.</p>
     }

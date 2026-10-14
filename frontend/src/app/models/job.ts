@@ -152,6 +152,12 @@ export interface Job {
   category?: Category;
 }
 
+export interface JobDetails {
+  content: string; // HTML from the company's job site
+  departments: string[];
+  fields: { name: string; value: string }[];
+}
+
 export interface JobsPage {
   items: Job[];
   total: number;

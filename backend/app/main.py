@@ -6,7 +6,8 @@ import httpx
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from app.db import ensure_indexes, jobs_collection
-from app.models import Category, CategoryCount, Job, JobSource, JobsPage
+from app.details import HTTP_HEADERS, get_details
+from app.models import Category, CategoryCount, Job, JobDetails, JobSource, JobsPage
 from app.providers import greenhouse
 
 
@@ -102,6 +103,25 @@ async def job_categories(search: str = "", source: JobSource | None = None) -> l
     ]
     rows = await (await jobs_collection.aggregate(pipeline)).to_list()
     return [CategoryCount(category=row["_id"] or "other", count=row["count"]) for row in rows]
+
+
+@app.get("/jobs/{job_id:path}/details")
+async def job_details(job_id: str) -> JobDetails:
+    """The full description of one job, fetched from the company's ATS the first time and then cached."""
+    document = await jobs_collection.find_one({"_id": job_id})
+    if document is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    async with httpx.AsyncClient(timeout=20, headers=HTTP_HEADERS, follow_redirects=True) as client:
+        try:
+            return await get_details(client, Job(**document))
+        except httpx.HTTPStatusError as error:
+            if error.response.status_code == 404:
+                raise HTTPException(status_code=404, detail="This job is no longer on the company's site") from error
+            raise HTTPException(status_code=502, detail="The company's job site did not answer") from error
+        except LookupError as error:
+            raise HTTPException(status_code=404, detail="This job is no longer on the company's site") from error
+        except httpx.HTTPError as error:
+            raise HTTPException(status_code=502, detail="The company's job site did not answer") from error
 
 
 @app.get("/jobs/{job_id:path}")  # Workday and Comeet ids contain "/"

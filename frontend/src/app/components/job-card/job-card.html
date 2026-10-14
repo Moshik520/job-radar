@@ -1,9 +1,57 @@
-<article class="job-card" data-testid="job-card">
-  <h3>
-    <a [routerLink]="['/jobs', job().id]" data-testid="job-card-link">{{ job().title }}</a>
-  </h3>
-  <p>{{ job().company }} · {{ job().location }}</p>
-  @if (job().category; as category) {
-    <span class="tag" data-testid="job-category">{{ categoryLabels[category] }}</span>
+<article
+  class="job-card"
+  data-testid="job-card"
+  [class.expandable]="expandable()"
+  [class.expanded]="expanded()"
+  [attr.aria-expanded]="expandable() ? expanded() : null"
+  (click)="onCardClick($event)"
+>
+  <div class="summary">
+    <div class="main">
+      <h3>
+        <a [routerLink]="['/jobs', job().id]" data-testid="job-card-link">{{ job().title }}</a>
+      </h3>
+      <p>{{ job().company }} · {{ job().location }}</p>
+      @if (job().category; as category) {
+        <span class="tag" data-testid="job-category">{{ categoryLabels[category] }}</span>
+      }
+    </div>
+    @if (expandable()) {
+      <span class="chevron" aria-hidden="true">{{ expanded() ? '▴' : '▾' }}</span>
+    }
+  </div>
+
+  @if (expanded()) {
+    <section class="details" data-testid="job-details-panel">
+      @if (details.isLoading()) {
+        <p class="muted" data-testid="job-details-loading">Loading job details…</p>
+      } @else if (details.error()) {
+        <p class="muted" data-testid="job-details-error">
+          Couldn't load the details from the company's site.
+          <a [href]="job().url" target="_blank" rel="noopener">Open the job there</a>
+        </p>
+      } @else if (details.hasValue()) {
+        @if (details.value().departments.length || details.value().fields.length) {
+          <dl class="facts">
+            @if (details.value().departments.length) {
+              <dt>Department</dt>
+              <dd>{{ details.value().departments.join(' · ') }}</dd>
+            }
+            @for (field of details.value().fields; track field.name) {
+              <dt>{{ field.name }}</dt>
+              <dd>{{ field.value }}</dd>
+            }
+          </dl>
+        }
+        @if (details.value().content) {
+          <div class="description" data-testid="job-description" [innerHTML]="details.value().content"></div>
+        } @else {
+          <p class="muted">The company didn't publish a description for this job.</p>
+        }
+        <a class="apply" [href]="job().url" target="_blank" rel="noopener" data-testid="job-apply-link">
+          Apply on company site →
+        </a>
+      }
+    </section>
   }
 </article>

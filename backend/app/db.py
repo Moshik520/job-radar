@@ -8,6 +8,7 @@ client = AsyncMongoClient(MONGO_URL)
 db = client["job_radar"]
 jobs_collection = db["jobs"]
 companies_collection = db["companies"]
+details_collection = db["job_details"]  # full descriptions, keyed by job id
 
 
 async def ensure_indexes() -> None:

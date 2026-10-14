@@ -5,8 +5,8 @@ from datetime import UTC, datetime, timedelta
 
 import httpx
 
-from app.models import Job
-from app.providers.common import get_json, make_job
+from app.models import Job, JobDetails
+from app.providers.common import get_json, make_details, make_job
 
 PAGE_SIZE = 20  # Workday's maximum
 MAX_JOBS = 2000  # Workday never pages past 2,000 results
@@ -54,3 +54,13 @@ async def fetch_jobs(client: httpx.AsyncClient, company: dict) -> list[Job]:
         if not batch or offset >= min(total, MAX_JOBS):
             break
     return [to_job(raw, company) for raw in postings if raw.get("externalPath")]
+
+
+async def fetch_details(client: httpx.AsyncClient, company: dict, native_id: str) -> JobDetails:
+    base = company["api_url"].rsplit("/jobs", 1)[0]
+    info = (await get_json(client, base + native_id)).get("jobPostingInfo") or {}
+    return make_details(
+        info.get("jobDescription"),
+        [],
+        {"Time type": info.get("timeType"), "Requisition": info.get("jobReqId")},
+    )

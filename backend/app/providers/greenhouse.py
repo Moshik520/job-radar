@@ -1,9 +1,11 @@
+import html
+
 import httpx
 
 from app.classify import classify_category
 from app.locations import is_israel
-from app.models import Job
-from app.providers.common import get_json
+from app.models import Job, JobDetails
+from app.providers.common import get_json, make_details
 
 API_URL = "https://boards-api.greenhouse.io/v1/boards/{board}/jobs"
 
@@ -32,3 +34,12 @@ async def fetch_jobs(client: httpx.AsyncClient, company: dict) -> list[Job]:
     board = company["board"]
     data = await get_json(client, API_URL.format(board=board))
     return [to_job(raw, board) for raw in data["jobs"]]
+
+
+async def fetch_details(client: httpx.AsyncClient, company: dict, native_id: str) -> JobDetails:
+    raw = await get_json(client, f"https://boards-api.greenhouse.io/v1/boards/{company['board']}/jobs/{native_id}")
+    return make_details(
+        html.unescape(raw.get("content") or ""),  # Greenhouse sends entity-escaped HTML
+        [d.get("name") for d in raw.get("departments") or []],
+        {m["name"]: m["value"] for m in raw.get("metadata") or [] if isinstance(m.get("value"), (str, int, float))},
+    )

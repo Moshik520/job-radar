@@ -1,9 +1,10 @@
+import html
 from datetime import UTC, datetime
 
 import httpx
 
-from app.models import Job
-from app.providers.common import get_json, make_job
+from app.models import Job, JobDetails
+from app.providers.common import JobNotOnBoard, get_json, make_details, make_job, recent_board
 
 
 def ms_to_iso(ms: int | None) -> str | None:
@@ -28,3 +29,20 @@ def to_job(raw: dict, company: dict) -> Job:
 
 async def fetch_jobs(client: httpx.AsyncClient, company: dict) -> list[Job]:
     return [to_job(raw, company) for raw in await get_json(client, company["api_url"])]
+
+
+async def fetch_details(client: httpx.AsyncClient, company: dict, native_id: str) -> JobDetails:
+    board = await recent_board(company["api_url"], lambda: get_json(client, company["api_url"]))
+    raw = next((j for j in board if j["id"] == native_id), None)
+    if raw is None:
+        raise JobNotOnBoard(native_id)
+    lists = "".join(
+        f"<h3>{html.escape(item.get('text', ''))}</h3><ul>{item.get('content', '')}</ul>"
+        for item in raw.get("lists") or []
+    )
+    categories = raw.get("categories") or {}
+    return make_details(
+        (raw.get("description") or "") + lists + (raw.get("additional") or ""),
+        [categories.get("team"), categories.get("department")],
+        {"Commitment": categories.get("commitment"), "Workplace": raw.get("workplaceType")},
+    )

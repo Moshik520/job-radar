@@ -1,4 +1,4 @@
-import { Component, computed, inject, linkedSignal } from '@angular/core';
+import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { CategoryFilter } from '../../components/category-filter/category-filter';
 import { JobCard } from '../../components/job-card/job-card';
 import { Category, JobsPage } from '../../models/job';
@@ -19,6 +19,7 @@ export class Jobs {
   protected readonly search = this.jobsService.search;
   protected readonly page = this.jobsService.page;
   protected readonly categories = this.jobsService.categories;
+  protected readonly expandedIds = signal<ReadonlySet<string>>(new Set());
   protected readonly categoryCounts = computed(() =>
     this.jobsService.categoryCounts.hasValue() ? this.jobsService.categoryCounts.value() : [],
   );
@@ -41,6 +42,22 @@ export class Jobs {
   onSearchInput(value: string) {
     clearTimeout(this.searchTimer);
     this.searchTimer = setTimeout(() => this.jobsService.setSearch(value.trim()), SEARCH_DEBOUNCE_MS);
+  }
+
+  toggleJob(id: string) {
+    this.expandedIds.update((ids) => {
+      const next = new Set(ids);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  collapseAll() {
+    this.expandedIds.set(new Set());
   }
 
   onCategoriesChange(categories: Category[]) {

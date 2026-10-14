@@ -13,3 +13,15 @@ FETCHERS = {
     "workday": workday.fetch_jobs,
     "comeet": comeet.fetch_jobs,
 }
+
+DETAIL_FETCHERS = {
+    "greenhouse": greenhouse.fetch_details,
+    "ashby": ashby.fetch_details,
+    "lever": lever.fetch_details,
+    "workable": workable.fetch_details,
+    "recruitee": recruitee.fetch_details,
+    "personio": personio.fetch_details,
+    "rippling": rippling.fetch_details,
+    "workday": workday.fetch_details,
+    "comeet": comeet.fetch_details,
+}

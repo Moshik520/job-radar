@@ -44,3 +44,16 @@ class JobsPage(BaseModel):
 class CategoryCount(BaseModel):
     category: Category
     count: int
+
+
+class DetailField(BaseModel):
+    name: str
+    value: str
+
+
+class JobDetails(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    content: str  # the job description as HTML, as the company wrote it
+    departments: list[str] = []
+    fields: list[DetailField] = []  # e.g. employment type, workplace

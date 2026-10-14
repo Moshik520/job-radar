@@ -7,7 +7,7 @@ import httpx
 
 from app.classify import classify_category
 from app.locations import is_israel
-from app.models import Job, JobSource
+from app.models import DetailField, Job, JobDetails, JobSource
 
 # Requests per second for hosts that answer 429 (Too Many Requests) when pushed.
 RATE_LIMITS = {
@@ -98,3 +98,36 @@ def make_job(
         is_israel=is_israel(location),
         category=classify_category(title),
     )
+
+
+def make_details(content: str | None, departments=(), fields: dict | None = None) -> JobDetails:
+    """Build JobDetails, dropping empty departments and fields."""
+    return JobDetails(
+        content=content or "",
+        departments=[d for d in departments if d],
+        fields=[DetailField(name=name, value=str(value)) for name, value in (fields or {}).items()
+                if value not in (None, "", [], {})],
+    )
+
+
+# Boards that only come whole (Ashby, Lever, Recruitee, Personio): reuse a recent download so opening
+# 50 jobs of one company costs one request, not 50.
+BOARD_TTL_SECONDS = 600
+_board_cache: dict[str, tuple[float, object]] = {}
+
+
+async def recent_board(key: str, fetch):
+    now = asyncio.get_running_loop().time()
+    hit = _board_cache.get(key)
+    if hit and hit[0] > now:
+        return hit[1]
+    board = await fetch()
+    if len(_board_cache) > 300:
+        for old in sorted(_board_cache, key=lambda k: _board_cache[k][0])[:100]:
+            _board_cache.pop(old, None)
+    _board_cache[key] = (now + BOARD_TTL_SECONDS, board)
+    return board
+
+
+class JobNotOnBoard(LookupError):
+    """The job is no longer on the company's board (it was closed)."""
