@@ -31,3 +31,28 @@
   text-align: center;
   color: var(--color-text-muted);
 }
+
+.status-message {
+  padding: 32px;
+  text-align: center;
+  color: var(--color-text-muted);
+
+  &.error {
+    color: #b42318;
+  }
+
+  p {
+    margin: 0 0 12px;
+  }
+}
+
+.retry-button {
+  padding: 8px 18px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}

@@ -1,7 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { MOCK_JOBS } from '../../models/mock-jobs';
 import { ApplicationsService } from '../../services/applications';
+import { JobsService } from '../../services/jobs';
 
 @Component({
   imports: [RouterLink],
@@ -11,9 +11,13 @@ import { ApplicationsService } from '../../services/applications';
 })
 export class JobDetails {
   private readonly applicationsService = inject(ApplicationsService);
+  private readonly jobsService = inject(JobsService);
 
   readonly id = input.required<string>();
-  protected readonly job = computed(() => MOCK_JOBS.find((job) => job.id === this.id()));
+  protected readonly isLoading = this.jobsService.jobs.isLoading;
+  protected readonly job = computed(() =>
+    this.jobsService.jobs.value()?.find((job) => job.id === this.id()),
+  );
   protected readonly isSaved = computed(() =>
     this.applicationsService.applications().some((application) => application.jobId === this.id()),
   );

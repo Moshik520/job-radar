@@ -5,14 +5,23 @@
   (input)="searchTerm.set($any($event.target).value)"
 />
 
-<p class="results-count" data-testid="results-count">
-  Showing {{ filteredJobs().length }} of {{ jobs().length }} jobs
-</p>
+@if (isLoading()) {
+  <p class="status-message" data-testid="jobs-loading">Loading jobs...</p>
+} @else if (error()) {
+  <div class="status-message error" data-testid="jobs-error">
+    <p>We couldn't load jobs right now. The server may be unavailable.</p>
+    <button class="retry-button" data-testid="retry-button" (click)="retry()">Try again</button>
+  </div>
+} @else {
+  <p class="results-count" data-testid="results-count">
+    Showing {{ filteredJobs().length }} of {{ jobs().length }} jobs
+  </p>
 
-<section class="job-list">
-  @for (job of filteredJobs(); track job.id) {
-    <app-job-card [job]="job" />
-  } @empty {
-    <p class="no-results" data-testid="no-results">No jobs match your search.</p>
-  }
-</section>
+  <section class="job-list">
+    @for (job of filteredJobs(); track job.id) {
+      <app-job-card [job]="job" />
+    } @empty {
+      <p class="no-results" data-testid="no-results">No jobs match your search.</p>
+    }
+  </section>
+}

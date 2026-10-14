@@ -1,6 +1,6 @@
-import { Component, computed, signal } from '@angular/core';
-import { MOCK_JOBS } from '../../models/mock-jobs';
+import { Component, computed, inject, signal } from '@angular/core';
 import { JobCard } from '../../components/job-card/job-card';
+import { JobsService } from '../../services/jobs';
 
 @Component({
   imports: [JobCard],
@@ -9,9 +9,16 @@ import { JobCard } from '../../components/job-card/job-card';
   templateUrl: './jobs.html',
 })
 export class Jobs {
-  protected readonly jobs = signal(MOCK_JOBS);
+  private readonly jobsService = inject(JobsService);
+  protected readonly isLoading = this.jobsService.jobs.isLoading;
+  protected readonly error = this.jobsService.jobs.error;
+  protected readonly jobs = computed(() => this.jobsService.jobs.value() ?? []);
   protected readonly searchTerm = signal('');
   protected readonly filteredJobs = computed(() =>
     this.jobs().filter((job) => job.title.toLowerCase().includes(this.searchTerm().toLowerCase())),
   );
+
+  retry() {
+    this.jobsService.jobs.reload();
+  }
 }

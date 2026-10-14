@@ -1,6 +1,8 @@
 <a class="back-link" routerLink="/jobs">← Back to jobs</a>
 
-@if (job(); as job) {
+@if (isLoading()) {
+  <p class="not-found" data-testid="job-loading">Loading job...</p>
+} @else if (job(); as job) {
   <article class="job-details" data-testid="job-details">
     <h1 data-testid="job-title">{{ job.title }}</h1>
     <p class="company">{{ job.company }}</p>
