@@ -6,8 +6,8 @@ I built Job Radar while looking for a job in Israel. A lot of openings show up o
 page days before they reach LinkedIn, or never reach it at all, so this pulls them directly from the
 hiring systems companies use.
 
-It scans the public job boards of about 12,300 companies on 9 applicant tracking systems (Greenhouse, Ashby,
-Lever, Workable, Recruitee, Personio, Rippling, Workday and Comeet), keeps the jobs located in Israel, sorts
+It scans the public job boards of about 12,350 companies on 10 applicant tracking systems (Greenhouse, Ashby,
+Lever, Workable, Recruitee, Personio, Rippling, Workday, Comeet and SmartRecruiters), keeps the jobs located in Israel, sorts
 them into job types and shows them in a web app with search and filters.
 
 Built with Angular, Python (FastAPI), MongoDB and pytest.
@@ -25,7 +25,7 @@ Built with Angular, Python (FastAPI), MongoDB and pytest.
 
 ```mermaid
 flowchart LR
-    ATS[Company job boards<br/>9 ATS] --> SC[Scanner]
+    ATS[Company job boards<br/>10 ATS] --> SC[Scanner]
     SC --> AD[Adapter per ATS]
     AD --> F[Israel filter<br/>+ job type]
     F --> DB[(MongoDB)]
@@ -53,6 +53,12 @@ fails is recorded on the company and skipped; it never stops the rest of the sca
 - **Job types from titles.** Titles are the only thing every ATS has. `classify.py` checks ordered rules, so
   "Android Developer - AI Finance Agent" counts as mobile and not AI. It also handles Hebrew titles, which most
   Comeet jobs use.
+- **Workday's 2,000 job limit.** Workday won't page past 2,000 results, so for NVIDIA most Israeli jobs were
+  never reached (154 found out of 420). The scanner now reads each board's location filters and asks for Israel
+  only. As a bonus, the ~1,250 Workday companies with no jobs in Israel now take one request each.
+- **The company list goes stale.** Companies switch hiring systems: monday.com moved from Comeet to Ashby and the
+  old board just returns an empty list. I went through ~250 Israeli tech companies, checked where each one
+  actually posts jobs, and added 52 boards that were missing.
 - **Closed jobs.** The scanner deletes a company's jobs that are no longer on its board, except when the scan
   didn't see the whole board (Workday stops at 2,000 jobs), so a partial scan can't delete open jobs.
 

@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from app.providers import comeet, lever, personio, workable, workday
+from app.providers import comeet, lever, personio, smartrecruiters, workable, workday
 from app.providers.common import display_name
 
 COMPANY = {"board": "acme", "name": "acme", "api_url": "https://acme.jobs.personio.de/xml", "board_url": ""}
@@ -75,3 +75,66 @@ def test_personio_builds_job_from_xml_position():
 )
 def test_display_name_only_prettifies_board_tokens(name, expected):
     assert display_name({"board": name, "name": name}) == expected
+
+
+# ---------- SmartRecruiters ----------
+
+def test_smartrecruiters_spells_out_israel():
+    raw = {"id": "7440", "name": "QA Engineer", "company": {"name": "Wix"}, "releasedDate": "2026-10-14T08:51:31.421Z",
+           "location": {"city": "Tel Aviv", "country": "il"}}
+
+    job = smartrecruiters.to_job(raw, {"board": "Wix2", "name": "Wix2"})
+
+    assert job.location == "Tel Aviv, Israel"
+    assert job.is_israel is True
+    assert job.company == "Wix"
+    assert job.url == "https://jobs.smartrecruiters.com/Wix2/7440"
+    assert job.published_at == "2026-10-14T08:51:31Z"
+
+
+# ---------- Workday: finding the Israel filter ----------
+
+NVIDIA_FACETS = [
+    {"facetParameter": "jobFamilyGroup", "values": [{"descriptor": "Engineering", "id": "e1"}]},
+    {"facetParameter": "locationMainGroup", "values": [
+        {"facetParameter": "locationHierarchy1", "descriptor": "Locations", "values": [
+            {"descriptor": "Germany", "id": "de"},
+            {"descriptor": "Israel", "id": "il-country"},
+        ]},
+        {"facetParameter": "locations", "descriptor": "Sites", "values": [
+            {"descriptor": "Israel, Yokneam", "id": "yokneam"},
+        ]},
+    ]},
+]
+
+
+def test_workday_prefers_the_country_filter():
+    assert workday.israel_filter(NVIDIA_FACETS) == {"locationHierarchy1": ["il-country"]}
+
+
+def test_workday_falls_back_to_israeli_sites():
+    facets = [{"facetParameter": "locations", "values": [
+        {"descriptor": "Tel Aviv, Israel", "id": "tlv"},
+        {"descriptor": "Haifa", "id": "haifa"},
+        {"descriptor": "Chicago, IL", "id": "chi"},
+    ]}]
+    assert workday.israel_filter(facets) == {"locations": ["tlv", "haifa"]}
+
+
+def test_workday_board_without_israel_has_no_israeli_jobs():
+    facets = [{"facetParameter": "locationCountry", "values": [{"descriptor": "Germany", "id": "de"}]}]
+    assert workday.israel_filter(facets) == {}
+
+
+def test_workday_board_without_location_filters_is_read_in_full():
+    assert workday.israel_filter([{"facetParameter": "timeType", "values": [{"descriptor": "Full time", "id": "f"}]}]) is None
+
+
+def test_workday_job_filtered_to_israel_keeps_its_place():
+    raw = {"externalPath": "/job/x_R1", "title": "Engineer", "locationsText": "2 Locations", "postedOn": "Posted Today"}
+    company = {"board": "wd5/nvidia/Site", "name": "nvidia", "board_url": "https://nvidia.wd5.myworkdayjobs.com/Site"}
+
+    job = workday.to_job(raw, company, in_israel=True)
+
+    assert job.location == "2 Locations, Israel"
+    assert job.is_israel is True

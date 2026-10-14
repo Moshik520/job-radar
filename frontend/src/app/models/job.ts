@@ -7,7 +7,8 @@ export type JobSource =
   | 'personio'
   | 'rippling'
   | 'workday'
-  | 'comeet';
+  | 'comeet'
+  | 'smartrecruiters';
 export type Category =
   | 'qa'
   | 'fullstack'
@@ -136,6 +137,7 @@ export const JOB_SOURCES: JobSource[] = [
   'rippling',
   'workday',
   'comeet',
+  'smartrecruiters',
 ];
 export const JOB_STATUSES: JobStatus[] = ['saved', 'applied', 'interview', 'offer', 'rejected'];
 

@@ -1,6 +1,17 @@
 """One adapter per applicant-tracking system. Each turns that ATS's job board into our Job model."""
 
-from app.providers import ashby, comeet, greenhouse, lever, personio, recruitee, rippling, workable, workday
+from app.providers import (
+    ashby,
+    comeet,
+    greenhouse,
+    lever,
+    personio,
+    recruitee,
+    rippling,
+    smartrecruiters,
+    workable,
+    workday,
+)
 
 FETCHERS = {
     "greenhouse": greenhouse.fetch_jobs,
@@ -12,6 +23,7 @@ FETCHERS = {
     "rippling": rippling.fetch_jobs,
     "workday": workday.fetch_jobs,
     "comeet": comeet.fetch_jobs,
+    "smartrecruiters": smartrecruiters.fetch_jobs,
 }
 
 DETAIL_FETCHERS = {
@@ -24,4 +36,5 @@ DETAIL_FETCHERS = {
     "rippling": rippling.fetch_details,
     "workday": workday.fetch_details,
     "comeet": comeet.fetch_details,
+    "smartrecruiters": smartrecruiters.fetch_details,
 }
