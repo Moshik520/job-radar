@@ -12,5 +12,13 @@ export interface Job {
   url: string;
   source: JobSource;
   publishedAt: string;
+  updatedAt: string;
   isIsrael: boolean;
+}
+
+export interface JobsPage {
+  items: Job[];
+  total: number;
+  page: number;
+  pageSize: number;
 }

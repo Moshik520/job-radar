@@ -1,22 +1,20 @@
 <h1>My Applications</h1>
 
 <section class="saved-jobs">
-  @for (item of savedJobs(); track item.application.jobId) {
-    @if (item.job; as job) {
-      <div class="saved-job" data-testid="saved-job">
-        <app-job-card [job]="job" />
-        <select
-          class="status-select"
-          data-testid="status-select"
-          [value]="item.application.status"
-          (change)="changeStatus(item.application.jobId, $any($event.target).value)"
-        >
-          @for (status of statuses; track status) {
-            <option [value]="status">{{ status }}</option>
-          }
-        </select>
-      </div>
-    }
+  @for (application of applications(); track application.jobId) {
+    <div class="saved-job" data-testid="saved-job">
+      <app-job-card [job]="application.job" />
+      <select
+        class="status-select"
+        data-testid="status-select"
+        [value]="application.status"
+        (change)="changeStatus(application.jobId, $any($event.target).value)"
+      >
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ status }}</option>
+        }
+      </select>
+    </div>
   } @empty {
     <p class="empty" data-testid="no-applications">You haven't saved any jobs yet.</p>
   }

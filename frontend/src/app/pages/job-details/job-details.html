@@ -30,7 +30,7 @@
         class="save-button"
         data-testid="save-button"
         [class.saved]="isSaved()"
-        (click)="toggleSave()"
+        (click)="toggleSave(job)"
       >
         @if (isSaved()) {
           Saved ✓

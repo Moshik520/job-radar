@@ -1,27 +1,52 @@
-<input
-  class="search-input"
-  data-testid="search-input"
-  placeholder="Search jobs..."
-  (input)="searchTerm.set($any($event.target).value)"
-/>
+<div class="filters">
+  <input
+    class="search-input"
+    data-testid="search-input"
+    placeholder="Search job titles..."
+    [value]="search()"
+    (input)="onSearchInput($any($event.target).value)"
+  />
 
-@if (isLoading()) {
-  <p class="status-message" data-testid="jobs-loading">Loading jobs...</p>
-} @else if (error()) {
+  <label class="checkbox">
+    <input
+      type="checkbox"
+      data-testid="israel-only"
+      [checked]="israelOnly()"
+      (change)="onIsraelOnlyChange($any($event.target).checked)"
+    />
+    Israel only
+  </label>
+</div>
+
+@if (error()) {
   <div class="status-message error" data-testid="jobs-error">
     <p>We couldn't load jobs right now. The server may be unavailable.</p>
     <button class="retry-button" data-testid="retry-button" (click)="retry()">Try again</button>
   </div>
+} @else if (!jobsPage()) {
+  <p class="status-message" data-testid="jobs-loading">Loading jobs...</p>
 } @else {
   <p class="results-count" data-testid="results-count">
-    Showing {{ filteredJobs().length }} of {{ jobs().length }} jobs
+    Showing {{ firstShown() }}–{{ lastShown() }} of {{ total() }} jobs
   </p>
 
-  <section class="job-list">
-    @for (job of filteredJobs(); track job.id) {
+  <section class="job-list" [class.updating]="isLoading()">
+    @for (job of jobs(); track job.id) {
       <app-job-card [job]="job" />
     } @empty {
       <p class="no-results" data-testid="no-results">No jobs match your search.</p>
     }
   </section>
+
+  @if (totalPages() > 1) {
+    <nav class="pagination" data-testid="pagination">
+      <button data-testid="prev-page" [disabled]="page() === 1" (click)="goToPage(page() - 1)">
+        ← Previous
+      </button>
+      <span data-testid="page-indicator">Page {{ page() }} of {{ totalPages() }}</span>
+      <button data-testid="next-page" [disabled]="page() === totalPages()" (click)="goToPage(page() + 1)">
+        Next →
+      </button>
+    </nav>
+  }
 }

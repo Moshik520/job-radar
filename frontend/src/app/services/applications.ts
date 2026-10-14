@@ -1,6 +1,7 @@
 import { effect, Service, signal } from '@angular/core';
 import { Application } from '../models/application';
-import { JobStatus } from '../models/job';
+import { Job, JobStatus } from '../models/job';
+
 // Temporary browser storage until the backend exists.
 const STORAGE_KEY = 'job-radar.applications';
 
@@ -12,14 +13,15 @@ export class ApplicationsService {
     effect(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(this.applications())));
   }
 
-  save(jobId: string) {
-    if (this.applications().some((application) => application.jobId === jobId)) {
+  save(job: Job) {
+    if (this.applications().some((application) => application.jobId === job.id)) {
       return;
     }
     const newApplication: Application = {
-      jobId,
+      jobId: job.id,
       status: 'saved',
       savedAt: new Date().toISOString(),
+      job,
     };
     this.applications.update((list) => [...list, newApplication]);
   }
@@ -38,7 +40,9 @@ export class ApplicationsService {
 
   private load(): Application[] {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
+      const stored: Application[] = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
+      // Entries saved before job snapshots existed can't be shown, so drop them.
+      return stored.filter((application) => application.job);
     } catch {
       return [];
     }
